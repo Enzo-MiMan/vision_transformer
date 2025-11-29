@@ -5,13 +5,14 @@ import argparse
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader as DataLoader
+from tensorboardX import SummaryWriter
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 
-import sys
-sys.path.append("/kaggle/input/vision-transformer/vision_transformer")
-from my_dataset import MyDataSet
+# import sys
+# sys.path.append("/kaggle/input/vision-transformer/vision_transformer")
+# from my_dataset import MyDataSet
 from vit_model import vit_base_patch16_224_in21k as create_model
 from utils import read_split_data, train_one_epoch, evaluate
 
@@ -20,8 +21,6 @@ def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
 
     tb_writer = SummaryWriter()
-
-    # train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -36,20 +35,20 @@ def main(args):
     train_dataset = ImageFolder(os.path.join(args.data_path, 'train'), transform=data_transform['train'])
     val_dataset = ImageFolder(os.path.join(args.data_path, 'val'), transform=data_transform['val'])
 
-    batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = min([os.cpu_count(), args.batch_size if args.batch_size > 1 else 0, 8])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
-    train_loader = torch.utils.data.DataLoader(train_dataset,
-                                               batch_size=batch_size,
-                                               shuffle=True,
-                                               pin_memory=True,
-                                               num_workers=0)
 
-    val_loader = torch.utils.data.DataLoader(val_dataset,
-                                             batch_size=batch_size,
-                                             shuffle=False,
-                                             pin_memory=True,
-                                             num_workers=0)
+    train_loader = DataLoader(train_dataset,
+                              batch_size=args.batch_size,
+                              shuffle=True,
+                              pin_memory=True,
+                              num_workers=nw)
+
+    val_loader = DataLoader(val_dataset,
+                            batch_size=args.batch_size,
+                            shuffle=False,
+                            pin_memory=True,
+                            num_workers=nw)
 
     model = create_model(num_classes=args.num_classes, has_logits=False).to(device)
 
@@ -121,23 +120,23 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=1000)
     parser.add_argument('--epochs', type=int, default=200)
-    parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
 
     # 数据集路径
-    parser.add_argument('--data-path', type=str, default="/Volumes/Enzo_Drive/datasets/cifar-100-images")
-    parser.add_argument('--model-name', default='', help='create model name')
+    parser.add_argument('--data-path', type=str, default="")
+    parser.add_argument('--model-name', default='vit_base_patch16_224_in21k', help='create model name')
 
     # 指定预训练权重路径
-    parser.add_argument('--weights', type=str, default='weights/vit_base_patch16_224_in21k-e5005f0a.pth', help='initial weights path')
+    parser.add_argument('--weights', type=str, default='./weights/vit_base_patch16_224_in21k-e5005f0a.pth', help='initial weights path')
 
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=True)
-    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+    parser.add_argument('--device', default='cuda', help='device id (i.e. 0 or 0,1 or cpu)')
 
-    # opt = parser.parse_args()
-    opt, unknown = parser.parse_known_args()
+    opt = parser.parse_args()
+    # opt, unknown = parser.parse_known_args()
 
     if not os.path.exists("./weights"):
         os.makedirs("./weights")

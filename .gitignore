@@ -2,6 +2,7 @@
 .idea
 __pycache__
 class_indices.json
+.gitattributes
 test.py
 runs
 weights
