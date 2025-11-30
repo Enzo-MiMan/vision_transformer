@@ -1,3 +1,10 @@
+
+相关视频（b站） ：
+- [ViT｜ Vision Transformer ｜理论 + 代码](https://www.bilibili.com/video/BV1xm4y1b7Pw/)
+- [kaggle 上白嫖 GPU 资源，训练 ViT 网络](https://www.bilibili.com/video/BV1zLSKBgE4S/)
+
+
+---
 模型支持 数据集结构如下 ：
 ```plaintext
 ImageNet/
